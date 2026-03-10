@@ -34,169 +34,171 @@ document.querySelectorAll('.pcs-btn').forEach(btn => {
   });
 });
 
-// ============================================
-// FIREBASE-BASED ROOM MANAGEMENT
-// ============================================
+// Wait until Firebase is ready before wiring up buttons
+function onFirebaseReady() {
+  const db = firebase.database();
 
-function getDB() {
-  return firebase.database();
-}
+  // CREATE ROOM
+  document.getElementById('createRoomBtn').addEventListener('click', async () => {
+    const name = validateName(document.getElementById('hostName').value);
+    if (!name) return;
 
-// CREATE ROOM
-document.getElementById('createRoomBtn').addEventListener('click', async () => {
-  const name = validateName(document.getElementById('hostName').value);
-  if (!name) return;
-
-  const code = generateRoomCode();
-  const playerId = 'p_' + Math.random().toString(36).substr(2, 9);
-
-  // Store in sessionStorage
-  sessionStorage.setItem('ludo_playerId', playerId);
-  sessionStorage.setItem('ludo_playerName', name);
-  sessionStorage.setItem('ludo_roomCode', code);
-  sessionStorage.setItem('ludo_isHost', 'true');
-
-  try {
-    const db = getDB();
-    const roomRef = db.ref(`rooms/${code}`);
-
-    await roomRef.set({
-      code,
-      hostId: playerId,
-      maxPlayers: selectedCount,
-      status: 'waiting',
-      createdAt: Date.now(),
-      players: {
-        [playerId]: {
-          id: playerId,
-          name,
-          color: null,
-          ready: false,
-          joinedAt: Date.now()
-        }
-      }
-    });
-
-    // Set up cleanup on disconnect
-    roomRef.onDisconnect().remove();
-
-    showToast('Room created! 🎉', 'gold');
-    window.location.href = `game.html?room=${code}`;
-  } catch (err) {
-    console.error('Create room error:', err);
-    showToast('Could not create room. Check Firebase config.', 'red');
-    showFirebaseHelp();
-  }
-});
-
-// JOIN ROOM
-document.getElementById('joinRoomBtn').addEventListener('click', async () => {
-  const name = validateName(document.getElementById('joinName').value);
-  if (!name) return;
-
-  const code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
-  if (code.length !== 6) { showToast('Enter a valid 6-character room code', 'red'); return; }
-
-  const playerId = 'p_' + Math.random().toString(36).substr(2, 9);
-
-  try {
-    const db = getDB();
-    const roomRef = db.ref(`rooms/${code}`);
-    const snapshot = await roomRef.get();
-
-    if (!snapshot.exists()) {
-      showToast('Room not found!', 'red'); return;
-    }
-
-    const roomData = snapshot.val();
-    if (roomData.status !== 'waiting') {
-      showToast('Game already started!', 'red'); return;
-    }
-
-    const players = roomData.players || {};
-    const playerCount = Object.keys(players).length;
-
-    if (playerCount >= roomData.maxPlayers) {
-      showToast('Room is full!', 'red'); return;
-    }
-
-    // Join room
-    await roomRef.child(`players/${playerId}`).set({
-      id: playerId,
-      name,
-      color: null,
-      ready: false,
-      joinedAt: Date.now()
-    });
-
-    roomRef.child(`players/${playerId}`).onDisconnect().remove();
+    const code = generateRoomCode();
+    const playerId = 'p_' + Math.random().toString(36).substr(2, 9);
 
     sessionStorage.setItem('ludo_playerId', playerId);
     sessionStorage.setItem('ludo_playerName', name);
     sessionStorage.setItem('ludo_roomCode', code);
-    sessionStorage.setItem('ludo_isHost', 'false');
+    sessionStorage.setItem('ludo_isHost', 'true');
 
-    showToast('Joining room...', 'gold');
-    window.location.href = `game.html?room=${code}`;
-  } catch (err) {
-    console.error('Join room error:', err);
-    showToast('Could not join room. Check Firebase config.', 'red');
-    showFirebaseHelp();
-  }
-});
+    try {
+      const roomRef = db.ref(`rooms/${code}`);
+      await roomRef.set({
+        code,
+        hostId: playerId,
+        maxPlayers: selectedCount,
+        status: 'waiting',
+        createdAt: Date.now(),
+        players: {
+          [playerId]: {
+            id: playerId,
+            name,
+            color: null,
+            ready: false,
+            joinedAt: Date.now()
+          }
+        }
+      });
 
-// Enter key support
-document.getElementById('roomCodeInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') document.getElementById('joinRoomBtn').click();
-});
-document.getElementById('hostName').addEventListener('keydown', e => {
-  if (e.key === 'Enter') document.getElementById('createRoomBtn').click();
-});
-document.getElementById('joinName').addEventListener('keydown', e => {
-  if (e.key === 'Enter') document.getElementById('joinRoomBtn').click();
-});
+      roomRef.onDisconnect().remove();
+      showToast('Room created! 🎉', 'gold');
+      window.location.href = `game.html?room=${code}`;
+    } catch (err) {
+      console.error('Create room error:', err);
+      if (err.code === 'PERMISSION_DENIED') {
+        showToast('Permission denied — check Firebase rules!', 'red');
+        showRulesHelp();
+      } else {
+        showToast('Error: ' + err.message, 'red');
+      }
+    }
+  });
 
-// Wait for Firebase to be ready
-document.addEventListener('firebase-ready', () => {
-  console.log('Firebase ready');
-});
+  // JOIN ROOM
+  document.getElementById('joinRoomBtn').addEventListener('click', async () => {
+    const name = validateName(document.getElementById('joinName').value);
+    if (!name) return;
 
-function showFirebaseHelp() {
-  const existingHelp = document.getElementById('firebase-help');
-  if (existingHelp) return;
+    const code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
+    if (code.length !== 6) { showToast('Enter a valid 6-character room code', 'red'); return; }
 
+    const playerId = 'p_' + Math.random().toString(36).substr(2, 9);
+
+    try {
+      const roomRef = db.ref(`rooms/${code}`);
+      const snapshot = await roomRef.get();
+
+      if (!snapshot.exists()) {
+        showToast('Room not found!', 'red'); return;
+      }
+
+      const roomData = snapshot.val();
+      if (roomData.status !== 'waiting') {
+        showToast('Game already started!', 'red'); return;
+      }
+
+      const players = roomData.players || {};
+      const playerCount = Object.keys(players).length;
+
+      if (playerCount >= roomData.maxPlayers) {
+        showToast('Room is full!', 'red'); return;
+      }
+
+      await roomRef.child(`players/${playerId}`).set({
+        id: playerId,
+        name,
+        color: null,
+        ready: false,
+        joinedAt: Date.now()
+      });
+
+      roomRef.child(`players/${playerId}`).onDisconnect().remove();
+
+      sessionStorage.setItem('ludo_playerId', playerId);
+      sessionStorage.setItem('ludo_playerName', name);
+      sessionStorage.setItem('ludo_roomCode', code);
+      sessionStorage.setItem('ludo_isHost', 'false');
+
+      showToast('Joining room...', 'gold');
+      window.location.href = `game.html?room=${code}`;
+    } catch (err) {
+      console.error('Join room error:', err);
+      if (err.code === 'PERMISSION_DENIED') {
+        showToast('Permission denied — check Firebase rules!', 'red');
+        showRulesHelp();
+      } else {
+        showToast('Error: ' + err.message, 'red');
+      }
+    }
+  });
+
+  // Enter key support
+  document.getElementById('roomCodeInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('joinRoomBtn').click();
+  });
+  document.getElementById('hostName').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('createRoomBtn').click();
+  });
+  document.getElementById('joinName').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('joinRoomBtn').click();
+  });
+
+  console.log('✅ Firebase connected and lobby ready');
+}
+
+// Listen for firebase-ready event
+document.addEventListener('firebase-ready', onFirebaseReady);
+
+// Fallback: if firebase-ready already fired before this script ran
+if (window._firebaseReady) {
+  onFirebaseReady();
+}
+
+function showRulesHelp() {
+  if (document.getElementById('rules-help')) return;
   const help = document.createElement('div');
-  help.id = 'firebase-help';
+  help.id = 'rules-help';
   help.style.cssText = `
     position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-    background: #16132e; border: 1px solid #f4b942; border-radius: 16px;
-    padding: 24px; max-width: 500px; width: 90%; z-index: 9999;
+    background: #16132e; border: 2px solid #f4b942; border-radius: 16px;
+    padding: 24px; max-width: 480px; width: 90%; z-index: 9999;
     font-family: 'Nunito', sans-serif; color: #f0eeff;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
   `;
   help.innerHTML = `
-    <h3 style="color:#f4b942; font-size:1.1rem; margin-bottom:12px;">⚙️ Firebase Setup Required</h3>
-    <p style="font-size:0.9rem; color:#9b96c0; line-height:1.6;">
-      To enable real-time multiplayer, you need a free Firebase project:
+    <h3 style="color:#f4b942; margin-bottom:12px;">🔒 Fix Firebase Rules</h3>
+    <p style="color:#9b96c0; font-size:0.9rem; line-height:1.6; margin-bottom:12px;">
+      Your database is blocking writes. Fix it in 30 seconds:
     </p>
-    <ol style="font-size:0.85rem; color:#9b96c0; margin:12px 0; padding-left:20px; line-height:2;">
-      <li>Go to <a href="https://console.firebase.google.com" target="_blank" style="color:#f4b942;">console.firebase.google.com</a></li>
-      <li>Create a new project (it's free!)</li>
-      <li>Add a Realtime Database → Start in <strong>test mode</strong></li>
-      <li>Get your config from Project Settings → Your apps</li>
-      <li>Update <code style="background:rgba(255,255,255,0.1); padding:2px 6px; border-radius:4px;">firebase-config.js</code> with your config</li>
+    <ol style="color:#9b96c0; font-size:0.88rem; padding-left:20px; line-height:2.2;">
+      <li>Open <a href="https://console.firebase.google.com/project/ludo-f404e/database" target="_blank" style="color:#f4b942;">Firebase Console → Realtime Database</a></li>
+      <li>Click the <strong style="color:#fff">Rules</strong> tab</li>
+      <li>Replace everything with:</li>
     </ol>
-    <div style="display:flex; gap:10px; margin-top:16px;">
-      <button onclick="this.closest('#firebase-help').remove()" style="
-        background: #f4b942; color: #000; border: none; border-radius: 8px;
-        padding: 8px 16px; cursor: pointer; font-weight: 800; font-family: inherit;
-      ">Got it!</button>
-      <a href="https://console.firebase.google.com" target="_blank" style="
-        background: transparent; color: #f4b942; border: 1px solid #f4b942;
-        border-radius: 8px; padding: 8px 16px; font-weight: 700; text-decoration: none;
-        font-size: 0.9rem; display: flex; align-items: center;
-      ">Open Firebase →</a>
-    </div>
+    <pre style="background:rgba(0,0,0,0.4); border:1px solid #2e2a55; border-radius:8px; padding:12px; margin:12px 0; font-size:0.85rem; color:#ffe082; overflow-x:auto;">{
+  "rules": {
+    ".read": true,
+    ".write": true
+  }
+}</pre>
+    <ol start="4" style="color:#9b96c0; font-size:0.88rem; padding-left:20px; line-height:2.2;">
+      <li>Click <strong style="color:#fff">Publish</strong></li>
+      <li>Come back and try again!</li>
+    </ol>
+    <button onclick="this.closest('#rules-help').remove()" style="
+      margin-top:8px; background:#f4b942; color:#000; border:none; border-radius:8px;
+      padding:10px 20px; cursor:pointer; font-weight:800; font-family:inherit; font-size:0.95rem;
+    ">Got it!</button>
   `;
   document.body.appendChild(help);
 }
