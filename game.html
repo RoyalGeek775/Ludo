@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ludo Royal — Game</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="game-page">
+
+  <!-- Waiting Room Overlay -->
+  <div class="overlay" id="waitingOverlay">
+    <div class="waiting-box">
+      <div class="crown-icon small">♛</div>
+      <h2>Waiting for Players</h2>
+      <div class="room-code-display">
+        <span>Room Code</span>
+        <div class="code-value" id="displayRoomCode">------</div>
+        <button class="btn btn-sm" id="copyCodeBtn">📋 Copy</button>
+      </div>
+      <div class="player-slots" id="playerSlots"></div>
+      <div class="waiting-info" id="waitingInfo">Waiting for players to join...</div>
+      <button class="btn btn-primary" id="startGameBtn" style="display:none">🎮 Start Game</button>
+      <button class="btn btn-ghost" id="leaveWaitingBtn">Leave Room</button>
+    </div>
+  </div>
+
+  <!-- Game Over Overlay -->
+  <div class="overlay hidden" id="gameOverOverlay">
+    <div class="gameover-box">
+      <div class="fireworks">🎉</div>
+      <h2 id="gameOverTitle">Player Wins!</h2>
+      <p id="gameOverSubtitle">Congratulations!</p>
+      <div class="rankings" id="rankings"></div>
+      <button class="btn btn-primary" id="playAgainBtn">Play Again</button>
+      <button class="btn btn-ghost" id="backToLobbyBtn">Back to Lobby</button>
+    </div>
+  </div>
+
+  <!-- Main Game Layout -->
+  <div class="game-layout">
+
+    <!-- Left Panel: Players Info -->
+    <aside class="players-panel" id="playersPanel">
+      <div class="panel-header">
+        <span class="crown-icon small">♛</span>
+        <span>Players</span>
+      </div>
+      <div id="playerInfoList"></div>
+
+      <div class="panel-section">
+        <div class="turn-indicator" id="turnIndicator">
+          <div class="turn-dot"></div>
+          <span id="turnText">Waiting...</span>
+        </div>
+      </div>
+
+      <div class="panel-section dice-section">
+        <div class="dice-display" id="diceDisplay">
+          <div class="die" id="die1">🎲</div>
+        </div>
+        <button class="btn btn-primary roll-btn" id="rollDiceBtn" disabled>Roll Dice</button>
+        <div class="dice-result" id="diceResult"></div>
+      </div>
+
+      <div class="room-info-panel">
+        <span>Room: <strong id="roomCodeDisplay">---</strong></span>
+        <button class="btn btn-sm" id="copyBtn2">Copy</button>
+      </div>
+    </aside>
+
+    <!-- Center: Ludo Board -->
+    <main class="board-container">
+      <canvas id="ludoCanvas" width="600" height="600"></canvas>
+    </main>
+
+    <!-- Right Panel: Chat -->
+    <aside class="chat-panel">
+      <div class="panel-header">
+        <span>💬</span>
+        <span>Game Chat</span>
+      </div>
+      <div class="chat-messages" id="chatMessages"></div>
+      <div class="chat-input-area">
+        <input type="text" id="chatInput" placeholder="Type a message..." maxlength="120" autocomplete="off"/>
+        <button class="btn btn-primary btn-sm" id="sendChatBtn">→</button>
+      </div>
+    </aside>
+
+  </div>
+
+  <!-- Move Selection Modal -->
+  <div class="overlay hidden" id="moveModal">
+    <div class="move-modal-box">
+      <h3>Choose a Piece to Move</h3>
+      <p id="moveModalText">You rolled a <strong id="rolledValue"></strong>. Select which piece to move:</p>
+      <div class="move-options" id="moveOptions"></div>
+      <button class="btn btn-ghost btn-sm" id="skipMoveBtn">Skip Turn</button>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script src="firebase-config.js"></script>
+  <script src="game-engine.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ludo Royal — Play Online Free</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body class="lobby-page">
+
+  <div class="stars-bg"></div>
+  <div class="lobby-container">
+
+    <header class="lobby-header">
+      <div class="crown-icon">♛</div>
+      <h1 class="game-title">LUDO<span>ROYAL</span></h1>
+      <p class="game-subtitle">The Classic Board Game — Now Online & Free</p>
+    </header>
+
+    <div class="lobby-cards">
+
+      <!-- Create Room -->
+      <div class="lobby-card create-card">
+        <div class="card-icon">🎲</div>
+        <h2>Create Room</h2>
+        <p>Start a new game and invite friends with a room code</p>
+        <div class="input-group">
+          <input type="text" id="hostName" placeholder="Your name" maxlength="16" autocomplete="off"/>
+        </div>
+        <div class="input-group">
+          <label>Players</label>
+          <div class="player-count-selector">
+            <button class="pcs-btn active" data-count="2">2</button>
+            <button class="pcs-btn" data-count="3">3</button>
+            <button class="pcs-btn" data-count="4">4</button>
+          </div>
+        </div>
+        <button class="btn btn-primary" id="createRoomBtn">Create Room</button>
+      </div>
+
+      <!-- Divider -->
+      <div class="lobby-divider">
+        <span>OR</span>
+      </div>
+
+      <!-- Join Room -->
+      <div class="lobby-card join-card">
+        <div class="card-icon">🚪</div>
+        <h2>Join Room</h2>
+        <p>Enter a room code to join a friend's game</p>
+        <div class="input-group">
+          <input type="text" id="joinName" placeholder="Your name" maxlength="16" autocomplete="off"/>
+        </div>
+        <div class="input-group">
+          <input type="text" id="roomCodeInput" placeholder="Room code (e.g. ABC123)" maxlength="6" autocomplete="off" style="text-transform:uppercase; letter-spacing:4px; font-weight:800;"/>
+        </div>
+        <button class="btn btn-secondary" id="joinRoomBtn">Join Room</button>
+      </div>
+    </div>
+
+    <div class="lobby-features">
+      <div class="feature"><span>⚡</span> Real-time multiplayer</div>
+      <div class="feature"><span>💬</span> In-game chat</div>
+      <div class="feature"><span>🎮</span> 2–4 players</div>
+      <div class="feature"><span>🆓</span> Completely free</div>
+    </div>
+
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script src="firebase-config.js"></script>
+  <script src="lobby.js"></script>
+</body>
+</html>
